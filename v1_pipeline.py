@@ -96,11 +96,12 @@ for i in RADIUS:
                 prev_cc2 = cc2
                 best_i = i
                 best_j = j
+            index+=1
 
         
             # print(f"cc1 = {cc1} (REF) || cc2 = {cc2} || PARAMS : radius = {i} / nump_warp = {j}")
             # print(index,cc1,cc2)
-            # index+=1
+            
         cc1_array.append(cc1_new)
         cc2_array.append(cc2_new)
     
@@ -114,14 +115,42 @@ cc2_array = np.array(cc2_array)
 
 
 data = [cc2_array[i] for i in range(len(cc1_array))]  # Regroupe toutes les valeurs en une liste de listes
+plt.figure()
 plt.boxplot(data, vert=True, patch_artist=True)
 
 plt.title("Box Plot des différentes séries de données")
 plt.ylabel("Valeurs")
-plt.xticks(range(1, len(cc1_array) + 1), [f"Série i:{i} j:{j}" for i in RADIUS for j in NUMP_WARP])
+plt.xticks(range(1, len(cc1_array) + 1), [f"i:{i} j:{j}" for i in RADIUS for j in NUMP_WARP])
+
+
+list_des_moyenne=[]
+list_des_ecarts_max=[]
+
+for i in range(len(cc1_array)):
+    list_des_moyenne.append(np.mean(cc2_array[i]))
+    if abs(max(cc2_array[i])-np.mean(cc2_array[i])) >abs(min(cc2_array[i])-np.mean(cc2_array[i])):
+        list_des_ecarts_max.append(abs(max(cc2_array[i])-np.mean(cc2_array[i])))
+    else: list_des_ecarts_max.append(abs(min(cc2_array[i])-np.mean(cc2_array[i])))
+
+matrix = np.array(list_des_moyenne).reshape(len(RADIUS),len(NUMP_WARP))
+matrix2 = np.array(list_des_ecarts_max).reshape(len(RADIUS),len(NUMP_WARP))
+
+print(list_des_moyenne)
+print(matrix)
+# Affichage avec imshow()
+plt.figure()
+plt.imshow(matrix, cmap="coolwarm")
+plt.colorbar()  # Barre de couleurs
+plt.title("moyenne")
+
+
+
+plt.figure()    
+plt.imshow(matrix2, cmap="coolwarm")
+plt.colorbar()  # Barre de couleurs
+plt.title("ECART")
 
 plt.show()
-# Tracer le box plot
 
 
     
