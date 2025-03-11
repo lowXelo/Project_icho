@@ -2,10 +2,10 @@
 #     input modules and functions       #
 #=======================================#
 
-with open("RESSOURCES\\import_modules.py") as mymodule:
+with open("C:/Users/youne/Desktop/ICHO/RESSOURCES/import_modules.py") as mymodule:
     exec(mymodule.read())
 
-with open("RESSOURCES\\my_pythfunc.py") as mypythfile:
+with open("C:/Users/youne/Desktop/ICHO/RESSOURCES/my_pythfunc.py") as mypythfile:
     exec(mypythfile.read())
 
 
@@ -23,7 +23,7 @@ mycref=33
 Nthumb=80
 
 iim=2000
-file_unregistered = "C:\\Users\\valen\\Desktop\\ICHO\\images\\L1a_images_cube2000.fits"
+file_unregistered = "C://Users//youne//Desktop//ICHO//L1a_images_cube2000.fits"
 #file_unregistered="L1a_images_cube"+str(iim)+".fits"
 
 hdul = fits.open(file_unregistered)
@@ -55,12 +55,13 @@ im_ref = unregim[:,:,mycref]
 cc1_array = []
 cc2_array = []
 
-RADIUS = [i for i in range(1,5)]
-NUMP_WARP = [i for i in range(1,3)]  
+RADIUS = range(1,10)
+NUMP_WARP = range(1,10)
 
 prev_cc2 = 0
 best_i = 0
 best_j = 0
+
 
 for i in RADIUS:
     for j in NUMP_WARP:
@@ -85,6 +86,8 @@ for i in RADIUS:
             cc1 = np.corrcoef(image.flatten(), im_ref.flatten())[0,1]
             cc2 = np.corrcoef(image1_warp.flatten(), im_ref.flatten())[0,1]
 
+         
+
             if index!=mycref:
                 cc1_new.append(cc1)
                 cc2_new.append(cc2)
@@ -95,25 +98,30 @@ for i in RADIUS:
                 best_j = j
 
         
-            print(f"cc1 = {cc1} (REF) || cc2 = {cc2} || PARAMS : radius = {i} / nump_warp = {j}")
+            # print(f"cc1 = {cc1} (REF) || cc2 = {cc2} || PARAMS : radius = {i} / nump_warp = {j}")
             # print(index,cc1,cc2)
             # index+=1
-
-    cc1_array.append(cc1_new)
-    cc2_array.append(cc2_new)
+        cc1_array.append(cc1_new)
+        cc2_array.append(cc2_new)
+    
+    
+    
 
 cc1_array = np.array(cc1_array)
 cc2_array = np.array(cc2_array)
 
-print(cc2_array)
+#print(cc2_array)
 
-for i in range(len(cc1_array)):
-    data = [cc2_array[i]]
 
-# Tracer le box plot
-plt.boxplot(data, vert=True, patch_artist=True)  # vert=True pour un boxplot vertical, patch_artist=True pour colorier
-plt.title("Box Plot des données")
+data = [cc2_array[i] for i in range(len(cc1_array))]  # Regroupe toutes les valeurs en une liste de listes
+plt.boxplot(data, vert=True, patch_artist=True)
+
+plt.title("Box Plot des différentes séries de données")
 plt.ylabel("Valeurs")
+plt.xticks(range(1, len(cc1_array) + 1), [f"Série i:{i} j:{j}" for i in RADIUS for j in NUMP_WARP])
+
 plt.show()
+# Tracer le box plot
+
 
     
