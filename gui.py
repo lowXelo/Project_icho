@@ -14,6 +14,8 @@ app.columnconfigure(1, weight=2)  # Colonne droite (contenu principal)
 
 fichiers_selectionnes = []
 states=[]
+nump_warp_g=1
+radius_g=1
 
 # --- FONCTIONS ---
 def ouvrir_fichier():
@@ -127,10 +129,14 @@ def get_checkbox_states():
 
 # Fonction pour mettre à jour la valeur affichée
 def update_value_radius(value):
+    global radius
     value_label_radius.configure(text=f"radius: {int(float(value))}")
+    radius=value
 
 def update_value_nump(value):
+    global nump_warp
     value_label_nump.configure(text=f"nump warp: {int(float(value))}")
+    nump_warp=value
 
 # Label pour afficher la valeur actuelle du slider
 value_label_radius = ctk.CTkLabel(frame_droite, text="radius : 1", font=("Arial", 16))
@@ -163,7 +169,7 @@ nump_warp.pack(pady=10)
 
 def execution():
     get_checkbox_states()
-    v1_pipelin_youness(states)  # Appelle la fonction avec les valeurs correctes
+    v1_pipeline_youness(states,nump_warp=nump_warp_g,radius=radius_g)  # Appelle la fonction avec les valeurs correctes
  
 
 # Bouton personnalisé

@@ -17,7 +17,7 @@ from skimage.transform import warp
 #=======================================#
 #              read files               #
 #=======================================#
-def v1_pipelin(file_unregistered="C://Users//youne//Desktop//ICHO//L1a_images_cube2000.fits",mycref=33,Nthumb=80,Nobs=4800):
+def v1_pipelin(les_options,file_unregistered="C://Users//youne//Desktop//ICHO//L1a_images_cube2000.fits",mycref=33,Nthumb=80,Nobs=4800,nump_warp_value=2,radius_value=2):
     Nobs=4800
     mycref=33
     Nthumb=80
@@ -55,8 +55,8 @@ def v1_pipelin(file_unregistered="C://Users//youne//Desktop//ICHO//L1a_images_cu
     cc1_array = []
     cc2_array = []
 
-    RADIUS = range(1,5)
-    NUMP_WARP = range(1,5)
+    RADIUS = range(1,radius_value)
+    NUMP_WARP = range(1,nump_warp_value)
 
     prev_cc2 = 0
     best_i = 0
@@ -65,7 +65,8 @@ def v1_pipelin(file_unregistered="C://Users//youne//Desktop//ICHO//L1a_images_cu
 
     for i in RADIUS:
         for j in NUMP_WARP:
-            t1=time.time()
+            if les_options[3]==1:
+                t1=time.time()
             cc1_new = []
             cc2_new = []
             index = 0
@@ -103,56 +104,56 @@ def v1_pipelin(file_unregistered="C://Users//youne//Desktop//ICHO//L1a_images_cu
                 
             cc1_array.append(cc1_new)
             cc2_array.append(cc2_new)
-            t2=time.time()
-            time_exe.append(t2-t1)
+            if les_options[3]==1:
+                t2=time.time()
+                time_exe.append(t2-t1)
         
     cc1_array = np.array(cc1_array)
     cc2_array = np.array(cc2_array)
 
+    if les_options[0]==1:
+        data = [cc2_array[i] for i in range(len(cc1_array))]  # Regroupe toutes les valeurs en une liste de listes
+        plt.figure()
+        plt.boxplot(data, vert=True, patch_artist=True)
 
-    data = [cc2_array[i] for i in range(len(cc1_array))]  # Regroupe toutes les valeurs en une liste de listes
-    plt.figure()
-    plt.boxplot(data, vert=True, patch_artist=True)
-
-    plt.title("Box Plot des différentes séries de données")
-    plt.ylabel("Valeurs")
-    plt.xticks(range(1, len(cc1_array) + 1), [f"i:{i} j:{j}" for i in RADIUS for j in NUMP_WARP])
+        plt.title("Box Plot des différentes séries de données")
+        plt.ylabel("Valeurs")
+        plt.xticks(range(1, len(cc1_array) + 1), [f"i:{i} j:{j}" for i in RADIUS for j in NUMP_WARP])
 
 
     list_des_moyenne=[]
     list_des_ecarts_max=[]
 
     for i in range(len(cc1_array)):
-        list_des_moyenne.append(np.mean(cc2_array[i]))
-        if abs(max(cc2_array[i])-np.mean(cc2_array[i])) >abs(min(cc2_array[i])-np.mean(cc2_array[i])):
-            list_des_ecarts_max.append(pow(max(cc2_array[i])-np.mean(cc2_array[i]),2))
-        else: list_des_ecarts_max.append(pow(min(cc2_array[i])-np.mean(cc2_array[i]),2))
+        if les_options[1]==1:
+            list_des_moyenne.append(np.mean(cc2_array[i]))
+        if les_options[2]==1:
+            if abs(max(cc2_array[i])-np.mean(cc2_array[i])) >abs(min(cc2_array[i])-np.mean(cc2_array[i])):
+                list_des_ecarts_max.append(pow(max(cc2_array[i])-np.mean(cc2_array[i]),2))
+            else: list_des_ecarts_max.append(pow(min(cc2_array[i])-np.mean(cc2_array[i]),2))
 
-    matrix_moy = np.array(list_des_moyenne).reshape(len(RADIUS),len(NUMP_WARP))
-    matrix_err = np.array(list_des_ecarts_max).reshape(len(RADIUS),len(NUMP_WARP))
-    matrix_time = np.array(time_exe).reshape(len(RADIUS),len(NUMP_WARP))
-
-    print(list_des_moyenne)
-    print(matrix_moy)
+    
+    
 
     # Affichage avec imshow()
-    plt.figure()
-    plt.imshow(matrix_moy, cmap="coolwarm")
-    plt.colorbar()  # Barre de couleurs
-    plt.title("moyenne")
+    if les_options[1]==1:
+        matrix_moy = np.array(list_des_moyenne).reshape(len(RADIUS),len(NUMP_WARP))
+        plt.figure()
+        plt.imshow(matrix_moy, cmap="coolwarm")
+        plt.colorbar()  # Barre de couleurs
+        plt.title("moyenne")
 
+    if les_options[2]==1:
+        matrix_err = np.array(list_des_ecarts_max).reshape(len(RADIUS),len(NUMP_WARP))
+        plt.figure()    
+        plt.imshow(matrix_err, cmap="coolwarm")
+        plt.colorbar()  # Barre de couleurs
+        plt.title("ECART")
 
-
-    plt.figure()    
-    plt.imshow(matrix_err, cmap="coolwarm")
-    plt.colorbar()  # Barre de couleurs
-    plt.title("ECART")
-
-    plt.figure()    
-    plt.imshow(matrix_time, cmap="coolwarm")
-    plt.colorbar()  # Barre de couleurs
-    plt.title("temps de traitement")
-    plt.show()
-
-
-v1_pipelin()
+    if les_options[3]==1:
+        matrix_time = np.array(time_exe).reshape(len(RADIUS),len(NUMP_WARP))
+        plt.figure()    
+        plt.imshow(matrix_time, cmap="coolwarm")
+        plt.colorbar()  # Barre de couleurs
+        plt.title("temps de traitement")
+        plt.show()
