@@ -8,6 +8,8 @@ with open("RESSOURCES\\import_modules.py") as mymodule:
 with open("RESSOURCES\\my_pythfunc.py") as mypythfile:
     exec(mypythfile.read())
 
+plt.style.use(["science","notebook","grid"])
+
 
 #from alive_progress import alive_bar
 from skimage.registration import optical_flow_ilk, optical_flow_tvl1
@@ -23,8 +25,8 @@ Nobs=4800
 mycref=33
 Nthumb=80
 
-iim=2000
-file_unregistered = "C:\\Users\\valen\\Desktop\\ICHO\\images\\L1a_images_cube2000.fits"
+iim=3000
+file_unregistered = "C:\\Users\\valen\\Desktop\\ICHO\\images\\L1a_images_cube4000.fits"
 #file_unregistered="L1a_images_cube"+str(iim)+".fits"
 
 hdul = fits.open(file_unregistered)
@@ -57,10 +59,10 @@ cc1_array = []
 cc2_array = []
 
 N_RADIUS = 3
-N_NW = 5
+N_NW = 15
 
-RADIUS = [i for i in range(1,N_RADIUS)]
-NUMP_WARP = [i for i in range(1,N_NW)]  
+RADIUS = [i for i in range(1,N_RADIUS+1)]
+NUMP_WARP = [i for i in range(1,N_NW+1)]  
 
 start_time = time.time()
 
@@ -68,17 +70,15 @@ best_i = 0 #Used to remember the (radius,num_warp) giving the best cc perf in me
 best_j = 0
 
 index_print = 0 #Index for the print loop
+prev_cc2 = 0 #To memorize the best (radius, num_warp) couple
 
-print(f"\n==== Nb. radius: {N_RADIUS-1} || Nb. num_warp : {N_NW-1} // Expect {(N_RADIUS-1)*(N_NW-1)} iterations === \n")
+print(f"\n==== Nb. radius: {N_RADIUS} || Nb. num_warp : {N_NW} // Expect {(N_RADIUS)*(N_NW)} iterations === \n")
 for i in RADIUS:
     for j in NUMP_WARP:
         cc1_new = []
         cc2_new = []
         index_im = 0
-
-        prev_cc2 = 0
         
-
         for k in range(0,Nthumb):
 
             image = unregim[:,:,k]
@@ -122,11 +122,18 @@ for i in RADIUS:
 cc1_array = np.array(cc1_array)
 cc2_array = np.array(cc2_array)
 
+
+cc2_mean_array = np.array([np.mean(sublist) for sublist in cc2_array])
+cc2_stds_array = np.array([np.std(sublist) for sublist in cc2_array])
+
+_ = np.array([i for i in range(1,len(cc2_mean_array)+1)])
+
+
 # print(np.shape(cc2_array))
 # print(cc2_array)
 
 print(f"\n=================================================================\n")
-print(f"Best mean perf given for (i,j) = ({best_i},{best_j})\n")
+print(f"Best mean perf given for (i,j) = ({best_i},{best_j}) || cc2_mean = {prev_cc2:.4f}\n")
 
 stop_time = time.time()
 
@@ -139,6 +146,15 @@ plt.boxplot(cc2_array.T, vert=True, patch_artist=True)
 plt.title("Box Plot des données")
 plt.ylabel("Valeurs")
 plt.xlabel("Index des séries")
+
+plt.figure()
+plt.plot(_,cc2_mean_array*100, 'x-',color="crimson",lw="2")
+plt.errorbar(_,cc2_mean_array*100,yerr=cc2_stds_array*100,color="black",fmt="None",capsize=5,elinewidth=0.8)
+plt.title("Graphique de l'évolution du coefficient de corrélation \nen fonction des couples de paramètres (méthode ilk)", pad = 20)
+plt.ylabel("Coefficient de corrélation (%)", labelpad = 15,fontsize=15)
+plt.xlabel("Index array", labelpad = 15,fontsize=15)
+plt.grid(which = "major", alpha = 0.9)
+plt.grid(which = "minor", alpha = 0.3)
 plt.show()
 
 
