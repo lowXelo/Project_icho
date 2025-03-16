@@ -169,7 +169,7 @@ nump_warp.pack(pady=10)
 
 def execution():
     get_checkbox_states()
-    v1_pipeline_youness(states,nump_warp=nump_warp_g,radius=radius_g)  # Appelle la fonction avec les valeurs correctes
+    v1_pipelin_youness(states,nump_warp_value=nump_warp_g,radius_value=radius_g)  # Appelle la fonction avec les valeurs correctes
  
 
 # Bouton personnalisé

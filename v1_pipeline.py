@@ -17,7 +17,7 @@ from skimage.transform import warp
 #=======================================#
 #              read files               #
 #=======================================#
-def v1_pipelin(les_options,file_unregistered="C://Users//youne//Desktop//ICHO//L1a_images_cube2000.fits",mycref=33,Nthumb=80,Nobs=4800,nump_warp_value=2,radius_value=2):
+def v1_pipelin_youness(les_options,file_unregistered="C://Users//youne//Desktop//ICHO//L1a_images_cube2000.fits",mycref=33,Nthumb=80,Nobs=4800,nump_warp_value=2,radius_value=2):
     Nobs=4800
     mycref=33
     Nthumb=80
@@ -110,9 +110,8 @@ def v1_pipelin(les_options,file_unregistered="C://Users//youne//Desktop//ICHO//L
         
     cc1_array = np.array(cc1_array)
     cc2_array = np.array(cc2_array)
-
+    data = [cc2_array[i] for i in range(len(cc1_array))]  # Regroupe toutes les valeurs en une liste de listes
     if les_options[0]==1:
-        data = [cc2_array[i] for i in range(len(cc1_array))]  # Regroupe toutes les valeurs en une liste de listes
         plt.figure()
         plt.boxplot(data, vert=True, patch_artist=True)
 
@@ -157,3 +156,5 @@ def v1_pipelin(les_options,file_unregistered="C://Users//youne//Desktop//ICHO//L
         plt.colorbar()  # Barre de couleurs
         plt.title("temps de traitement")
         plt.show()
+
+v1_pipelin_youness([1,1,1,1],radius_value=3,nump_warp_value=5)
