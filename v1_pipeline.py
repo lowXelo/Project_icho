@@ -17,13 +17,13 @@ from skimage.transform import warp
 #=======================================#
 #              read files               #
 #=======================================#
-def v1_pipelin_youness(les_options,file_unregistered="C://Users//youne//Desktop//ICHO//L1a_images_cube2000.fits",mycref=33,Nthumb=80,Nobs=4800,nump_warp_value=2,radius_value=2):
+def v1_pipelin_youness(les_options,file_unregistered = "C://Users//youne//Desktop//ICHO//L1a_images_cube2000.fits",mycref=33,Nthumb=80,Nobs=4800,nump_warp_value=2,radius_value=2):
     Nobs=4800
     mycref=33
     Nthumb=80
 
     iim=2000
-    file_unregistered = "C://Users//youne//Desktop//ICHO//L1a_images_cube2000.fits"
+    
     #file_unregistered="L1a_images_cube"+str(iim)+".fits"
 
     hdul = fits.open(file_unregistered)
@@ -65,11 +65,12 @@ def v1_pipelin_youness(les_options,file_unregistered="C://Users//youne//Desktop/
 
     for i in RADIUS:
         for j in NUMP_WARP:
+            index = 0
             if les_options[3]==1:
                 t1=time.time()
             cc1_new = []
             cc2_new = []
-            index = 0
+            
             for k in range(0,Nthumb):
 
                 image = unregim[:,:,k]
@@ -156,5 +157,3 @@ def v1_pipelin_youness(les_options,file_unregistered="C://Users//youne//Desktop/
         plt.colorbar()  # Barre de couleurs
         plt.title("temps de traitement")
         plt.show()
-
-v1_pipelin_youness([1,1,1,1],radius_value=3,nump_warp_value=5)

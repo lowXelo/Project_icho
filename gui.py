@@ -14,8 +14,7 @@ app.columnconfigure(1, weight=2)  # Colonne droite (contenu principal)
 
 fichiers_selectionnes = []
 states=[]
-nump_warp_g=1
-radius_g=1
+
 
 # --- FONCTIONS ---
 def ouvrir_fichier():
@@ -38,8 +37,6 @@ def afficher_chemins():
     for fichier in fichiers_selectionnes:
         text_zone.insert(tk.END, f"{fichier}\n")  # Ajoute chaque fichier
     text_zone.config(state="disabled")  # Bloque l'édition
-
-
 
 
 def enregistrer_fichier():
@@ -126,17 +123,19 @@ def get_checkbox_states():
     states = [var.get() for var in checkbox_vars]
     messagebox.showinfo("État des Checkboxes", f"État en binaire : {states}")
 
+nump_warp_g=2
+radius_g=2
 
 # Fonction pour mettre à jour la valeur affichée
 def update_value_radius(value):
-    global radius
+    global radius_g
     value_label_radius.configure(text=f"radius: {int(float(value))}")
-    radius=value
+    radius_g=value
 
 def update_value_nump(value):
-    global nump_warp
+    global nump_warp_g
     value_label_nump.configure(text=f"nump warp: {int(float(value))}")
-    nump_warp=value
+    nump_warp_g=value
 
 # Label pour afficher la valeur actuelle du slider
 value_label_radius = ctk.CTkLabel(frame_droite, text="radius : 1", font=("Arial", 16))
@@ -145,14 +144,14 @@ value_label_nump = ctk.CTkLabel(frame_droite, text="nump warp : 1", font=("Arial
 
 
 # Slider (curseur) de 1 à 30
-radius = ctk.CTkSlider(
+slider_radius = ctk.CTkSlider(
     frame_droite,
     from_=1,
     to=30,
     number_of_steps=29,
     command=update_value_radius
 )
-nump_warp = ctk.CTkSlider(
+slider_nump_warp = ctk.CTkSlider(
     frame_droite,
     from_=1,
     to=30,
@@ -160,16 +159,18 @@ nump_warp = ctk.CTkSlider(
     command=update_value_nump
 )
 value_label_radius.pack(pady=10) # ajout du label
-radius.set(1)  # Valeur initiale
-radius.pack(pady=10)
+slider_radius.set(1)  # Valeur initiale
+slider_radius.pack(pady=10)
 
 value_label_nump.pack(pady=10)
-nump_warp.set(1)  # Valeur initiale
-nump_warp.pack(pady=10)
+slider_nump_warp.set(1)  # Valeur initiale
+slider_nump_warp.pack(pady=10)
 
 def execution():
     get_checkbox_states()
-    v1_pipelin_youness(states,nump_warp_value=nump_warp_g,radius_value=radius_g)  # Appelle la fonction avec les valeurs correctes
+    print(states)
+    for i in fichiers_selectionnes:
+        v1_pipelin_youness(les_options=states,file_unregistered=i,nump_warp_value=int(nump_warp_g),radius_value=int(radius_g))  # Appelle la fonction avec les valeurs correctes
  
 
 # Bouton personnalisé
