@@ -112,13 +112,17 @@ def v1_pipelin_youness(les_options,file_unregistered = "C://Users//youne//Deskto
     cc1_array = np.array(cc1_array)
     cc2_array = np.array(cc2_array)
     data = [cc2_array[i] for i in range(len(cc1_array))]  # Regroupe toutes les valeurs en une liste de listes
-    if les_options[0]==1:
-        plt.figure()
-        plt.boxplot(data, vert=True, patch_artist=True)
+    
 
-        plt.title("Box Plot des différentes séries de données")
-        plt.ylabel("Valeurs")
-        plt.xticks(range(1, len(cc1_array) + 1), [f"i:{i} j:{j}" for i in RADIUS for j in NUMP_WARP])
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(6, 6))
+
+    if les_options[0]==1:
+        
+        axes[0,0].boxplot(data, vert=True, patch_artist=True)
+
+        axes[0,0].set_title("Box Plot des différentes séries de données")
+        axes[0,0].set_ylabel("Valeurs")
+        axes[0,0].set_xticks(range(1, len(cc1_array) + 1), [f"i:{i} j:{j}" for i in RADIUS for j in NUMP_WARP])
 
 
     list_des_moyenne=[]
@@ -138,22 +142,22 @@ def v1_pipelin_youness(les_options,file_unregistered = "C://Users//youne//Deskto
     # Affichage avec imshow()
     if les_options[1]==1:
         matrix_moy = np.array(list_des_moyenne).reshape(len(RADIUS),len(NUMP_WARP))
-        plt.figure()
-        plt.imshow(matrix_moy, cmap="coolwarm")
-        plt.colorbar()  # Barre de couleurs
-        plt.title("moyenne")
+        
+        im=axes[0,1].imshow(matrix_moy, cmap="coolwarm")
+        fig.colorbar(im, ax=axes[0,1])  # Barre de couleurs
+        axes[0,1].set_title("moyenne")
 
     if les_options[2]==1:
         matrix_err = np.array(list_des_ecarts_max).reshape(len(RADIUS),len(NUMP_WARP))
-        plt.figure()    
-        plt.imshow(matrix_err, cmap="coolwarm")
-        plt.colorbar()  # Barre de couleurs
-        plt.title("ECART")
+          
+        im1=axes[1,0].imshow(matrix_err, cmap="coolwarm")
+        fig.colorbar(im1, ax=axes[1,0])  # Barre de couleurs
+        axes[1,0].set_title("ECART")
 
     if les_options[3]==1:
-        matrix_time = np.array(time_exe).reshape(len(RADIUS),len(NUMP_WARP))
-        plt.figure()    
-        plt.imshow(matrix_time, cmap="coolwarm")
-        plt.colorbar()  # Barre de couleurs
-        plt.title("temps de traitement")
-        plt.show()
+        matrix_time = np.array(time_exe).reshape(len(RADIUS),len(NUMP_WARP))    
+        im2=axes[1,1].imshow(matrix_time, cmap="coolwarm")
+        fig.colorbar(im2, ax=axes[1,1]) # Barre de couleurs
+        axes[1,1].set_title("temps de traitement")
+
+    plt.show(block=False)
