@@ -2,11 +2,16 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import messagebox,filedialog
 from v1_pipeline import v1_pipelin_youness
+from multiprocessing import Process, Queue
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 # Initialize the app
 ctk.set_appearance_mode("dark")  # Options: "System", "Light", "Dark"
 ctk.set_default_color_theme("blue")  # Themes: "blue", "green", "dark-blue"
 app = ctk.CTk()  
+app.title("HIA")
 
 # --- STRUCTURE EN DEUX COLONNES ---
 app.columnconfigure(0, weight=1)  # Colonne gauche (zone affichage)
@@ -14,7 +19,7 @@ app.columnconfigure(1, weight=2)  # Colonne droite (contenu principal)
 
 fichiers_selectionnes = []
 states=[]
-
+pipline_result={}
 
 # --- FONCTIONS ---
 def ouvrir_fichier():
@@ -92,7 +97,7 @@ text_zone = tk.Text(frame_gauche, height=20, wrap="word", font=("Arial", 12))
 text_zone.pack(pady=5, padx=5, fill="both", expand=True)
 text_zone.config(state="disabled")  # Désactive l'édition
 
-app.title("Fully Customized Button")
+
 
 # --- CADRE DROIT : Contenu principal (Bouton, Slider) ---
 frame_droite = ctk.CTkFrame(app)
@@ -130,12 +135,12 @@ radius_g=2
 def update_value_radius(value):
     global radius_g
     value_label_radius.configure(text=f"radius: {int(float(value))}")
-    radius_g=value
+    radius_g=value+1
 
 def update_value_nump(value):
     global nump_warp_g
     value_label_nump.configure(text=f"nump warp: {int(float(value))}")
-    nump_warp_g=value
+    nump_warp_g=value+1
 
 # Label pour afficher la valeur actuelle du slider
 value_label_radius = ctk.CTkLabel(frame_droite, text="radius : 1", font=("Arial", 16))
@@ -166,12 +171,70 @@ value_label_nump.pack(pady=10)
 slider_nump_warp.set(1)  # Valeur initiale
 slider_nump_warp.pack(pady=10)
 
-def execution():
+# Create a progress bar
+progress_bar = ctk.CTkProgressBar(app)
+progress_bar.grid(row=1, column=0, columnspan=2, sticky="ew", padx=10, pady=10) 
+
+# Set the initial progress to 0
+progress_bar.set(0)
+
+def plot_results(returned_data):
+    for file_key, matrices in returned_data.items():
+        valid_matrices = {k: v for k, v in matrices.items() if k != "Best combination"}
+        num_matrices = len(valid_matrices)
+
+        rows, cols = 2, 2  # Fixed 2x2 grid
+        fig, axes = plt.subplots(rows, cols, figsize=(10, 10))  
+        axes = axes.flatten()  # Convert to a list for easier iteration
+
+        for idx, (matrix_name, matrix) in enumerate(valid_matrices.items()):
+            ax = axes[idx]
+            
+            if matrix_name == "data":
+                ax.boxplot(matrix)
+                ax.set_xlabel("Columns")
+                ax.set_ylabel("Rows")
+            else:
+                im = ax.imshow(matrix, cmap="coolwarm", aspect="auto")
+                fig.colorbar(im, ax=ax)
+                ax.set_xlabel("Columns")
+                ax.set_ylabel("Rows")
+            
+            ax.set_title(matrix_name)
+        
+        # Hide any unused subplots
+        for j in range(num_matrices, len(axes)):
+            fig.delaxes(axes[j])
+
+        fig.suptitle(f"File: {file_key}", fontsize=14, fontweight="bold")
+        plt.tight_layout()
+        plt.show(block=False)  # Display the plot
+            
+# Function to start processing in a separate process
+def start_processing():
+    global process
+    queue = Queue()
+    result_queue = Queue()
     get_checkbox_states()
-    print(states)
-    for i in fichiers_selectionnes:
-        v1_pipelin_youness(les_options=states,file_unregistered=i,nump_warp_value=int(nump_warp_g),radius_value=int(radius_g))  # Appelle la fonction avec les valeurs correctes
- 
+
+    process = Process(target=v1_pipelin_youness, args=(states, queue,result_queue,fichiers_selectionnes,int(nump_warp_g),int(radius_g)))
+    process.start()
+
+    # Update progress bar dynamically
+    def update_progress():
+        if not queue.empty():
+            progress_value = queue.get()
+            progress_bar.set(progress_value/100)  # Correct usage in CustomTkinter
+            if progress_value==100:
+                pipline_result=result_queue.get()
+                plot_results(pipline_result)
+
+        if process.is_alive():
+            app.after(100, update_progress)  # Continue updating       
+
+    update_progress()
+   
+    
 
 # Bouton personnalisé
 custom_button = ctk.CTkButton(
@@ -186,9 +249,10 @@ custom_button = ctk.CTkButton(
     border_width=2,
     border_color="white",
     font=("Arial", 16, "bold"),
-    command=execution,
+    command=start_processing,
 )
 custom_button.pack(pady=20)
 
-# Run the app
-app.mainloop()
+if __name__ == "__main__":
+    # Run the app
+    app.mainloop()
