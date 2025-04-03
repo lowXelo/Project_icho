@@ -194,7 +194,9 @@ def update_interface(mode):
                     
         # Function to start processing in a separate process
         def start_processing():
+            result_queue={}
             global process
+            global nump_warp_g,radius_g
             queue = Queue()
             result_queue = Queue()
             get_checkbox_states()
@@ -209,6 +211,8 @@ def update_interface(mode):
                     progress_bar.set(progress_value/100)  # Correct usage in CustomTkinter
                     if progress_value==100:
                         pipline_result=result_queue.get()
+                        print(pipline_result)
+                        print(nump_warp_g,radius_g)
                         plot_results(pipline_result)
 
                 if process.is_alive():
@@ -315,6 +319,7 @@ def update_interface(mode):
             plt.show(block=False)  # Display the plot
 
         def start_processing_direct():
+            result_queue={}
             global process
             queue = Queue()
             result_queue = Queue()
