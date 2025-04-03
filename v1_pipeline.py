@@ -141,3 +141,59 @@ def v1_pipelin_youness(les_options, queue, result_queue,file_unregistered, nump_
     result_queue.put(returned_data)
     queue.put(100)  
     
+def v1_direct(les_options, queue, result_queue, file_unregistered, nump_warp_value=2, radius_value=2):
+    progress = 0
+    queue.put(progress)
+    Nobs = 4800
+    mycref = 33
+    Nthumb = 80
+    returned_data = {}
+    
+    for file_index, file_path in enumerate(file_unregistered, start=1):  
+        file_key = f"file {file_index}"
+        returned_data[file_key] = {}
+        
+        hdul = fits.open(file_path)
+        unregim = hdul[0].data.astype(float)
+        unregim = np.transpose(unregim, (1, 2, 0))
+        
+        for tt in range(Nthumb):
+            progress+=1
+            queue.put(progress/160*100)
+            medfi = scipy.signal.medfilt2d(unregim[:, :, tt])
+            outl, _ = find_outliers_2D(unregim[:, :, tt], pclow=10, pchigh=90)
+            for oo in outl:
+                unregim[oo[0], oo[1], tt] = medfi[oo[0], oo[1]]
+        
+        im_ref = unregim[:, :, mycref]
+        cc1_array = []
+        cc2_array = []
+
+        
+        for k in range(Nthumb):
+            progress+=1
+            queue.put(progress/160*100)
+            image = unregim[:, :, k]
+            v, u = optical_flow_ilk(im_ref, image, radius=radius_value, num_warp=nump_warp_value, prefilter=True)
+            nr, nc = im_ref.shape
+            row_coords, col_coords = np.meshgrid(np.arange(nr), np.arange(nc), indexing='ij')
+            image1_warp = warp(image, np.array([row_coords + v, col_coords + u]), mode='reflect')
+            cc1 = np.corrcoef(image.flatten(), im_ref.flatten())[0, 1]
+            cc2 = np.corrcoef(image1_warp.flatten(), im_ref.flatten())[0, 1]
+            
+            if k != mycref:
+                cc1_array.append(cc1)
+                cc2_array.append(cc2)
+            
+            data_cc1 = [cc1_array[i] for i in range(len(cc1_array))]
+            data_cc2 = [cc2_array[i] for i in range(len(cc2_array))]
+
+        image1_warp = warp(unregim[:, :, 0], np.array([row_coords + v, col_coords + u]), mode='reflect')
+
+        returned_data[file_key]["data_old"] =data_cc1
+        returned_data[file_key]["data_new"] =data_cc2
+        returned_data[file_key]["image_before"]=im_ref
+        returned_data[file_key]["image_after"]=image1_warp
+   
+    result_queue.put(returned_data)
+    queue.put(100)
