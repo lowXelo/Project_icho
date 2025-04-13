@@ -2,6 +2,7 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import messagebox,filedialog
 from v1_pipeline import v1_pipelin_youness,v1_direct
+from simple_pipeline import v_simple
 from multiprocessing import Process, Queue
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,7 +21,7 @@ app.columnconfigure(1, weight=2)  # Colonne droite (contenu principal)
 fichiers_selectionnes = []
 states=[]
 pipline_result={}
-
+corners=[]
 # --- FONCTIONS ---
 def ouvrir_fichier():
     global fichiers_selectionnes
@@ -42,7 +43,6 @@ def afficher_chemins():
     for fichier in fichiers_selectionnes:
         text_zone.insert(tk.END, f"{fichier}\n")  # Ajoute chaque fichier
     text_zone.config(state="disabled")  # Bloque l'édition
-
 
 def enregistrer_fichier():
     messagebox.showinfo("Enregistrer", "Fichier enregistré !")
@@ -74,6 +74,7 @@ menu_outils = tk.Menu(menu_bar, tearoff=0)
 functions_dict = {
     "V1 search": lambda: update_interface("search"),
     "V1 calculate": lambda: update_interface("use"),
+    "simple defortmation": lambda: update_interface("Deformation simple"),
 }
 
 def update_interface(mode):
@@ -109,9 +110,6 @@ def update_interface(mode):
             global states 
             states = [var.get() for var in checkbox_vars]
             messagebox.showinfo("État des Checkboxes", f"État en binaire : {states}")
-
-        nump_warp_g=2
-        radius_g=2
 
         # Fonction pour mettre à jour la valeur affichée
         def update_value_radius(value):
@@ -159,17 +157,22 @@ def update_interface(mode):
 
         # Set the initial progress to 0
         progress_bar.set(0)
-
+        # --- AFFICHER LES best combinaison ---
+        def afficher_combinaison(name,value):
+            text_zone.config(state="normal")  # Débloque l'édition
+            text_zone.insert(tk.END, f"{name} = {(int(value[0]),int(value[1]))}\n")  # Ajoute chaque fichier
+            text_zone.config(state="disabled")  # Bloque l'édition
+        
         def plot_results(returned_data):
             for file_key, matrices in returned_data.items():
-                valid_matrices = {k: v for k, v in matrices.items() if k != "Best combination"}
+                valid_matrices = {k: v if k != "Best combination" else afficher_combinaison(k,v) for k, v in matrices.items()}
                 num_matrices = len(valid_matrices)
 
                 rows, cols = 2, 2  # Fixed 2x2 grid
                 fig, axes = plt.subplots(rows, cols, figsize=(10, 10))  
                 axes = axes.flatten()  # Convert to a list for easier iteration
 
-                for idx, (matrix_name, matrix) in enumerate(valid_matrices.items()):
+                for idx, (matrix_name, matrix) in enumerate(list(valid_matrices.items())[:-1]):
                     ax = axes[idx]
                     
                     if matrix_name == "data":
@@ -211,8 +214,6 @@ def update_interface(mode):
                     progress_bar.set(progress_value/100)  # Correct usage in CustomTkinter
                     if progress_value==100:
                         pipline_result=result_queue.get()
-                        print(pipline_result)
-                        print(nump_warp_g,radius_g)
                         plot_results(pipline_result)
 
                 if process.is_alive():
@@ -301,12 +302,10 @@ def update_interface(mode):
                     
                     elif matrix_name == "image_before":
                         ax.imshow(matrix)
-                        print("one")
-                        print(len(matrix))
+                  
                     else:
                         ax.imshow(np.array(matrix))
-                        print("twp")
-                        print(len(matrix[0]))
+                        
                         
 
                     
@@ -368,6 +367,177 @@ def update_interface(mode):
         plot_button = ctk.CTkButton(frame_droite, text="Afficher Graphiques", command=start_processing_direct)
         plot_button.pack(pady=10)
 
+    elif mode == "Deformation simple":
+        label_deform = ctk.CTkLabel(frame_droite, text="Déformations simples", font=("Arial", 14, "bold"))
+        label_deform.pack(pady=10)
+
+        canvas_size = 300
+        canvas = tk.Canvas(frame_droite, width=canvas_size, height=canvas_size, bg="white")
+        canvas.pack(pady=10)
+
+        global corners
+        corners = [[100, 100], [200, 100], [200, 200], [100, 200]]
+
+        square = canvas.create_polygon(*[coord for point in corners for coord in point], fill="skyblue")
+
+        def plot_results_simple(result):
+            text_zone.config(state="normal")  # Débloque l'édition
+            for file_key,value in result.items():
+                text_zone.insert(tk.END, f"\n===================================================================\n")
+                text_zone.insert(tk.END, f"{file_key} :\n")  # Ajoute chaque fichier  
+                text_zone.insert(tk.END, f"[TRANSLATION] cc1_mean ={value[0]} \n") 
+                text_zone.insert(tk.END, f"cc2_transl_mean = {value[1]:.4f} || delta = {value[1]-value[0]:.4f}\n") 
+                text_zone.insert(tk.END, f"cc2_rigid_mean = = {value[2]:.4f} || delta = {value[2]-value[0]:.4f}\n") 
+                text_zone.insert(tk.END, f"cc2_sclrot_mean = {value[3]:.4f} || delta = {value[3]-value[0]:.4f}\n")               
+                text_zone.insert(tk.END, f"cc2_aff_mean = {value[4]:.4f} || delta = {value[4]-value[0]:.4f}\n")
+                text_zone.insert(tk.END, f"cc2_bil_mean = = {value[5]:.4f} || delta = {value[5]-value[0]:.4f}\n") 
+                text_zone.insert(tk.END, f"Translation\nRigid body = translation + rotation\nScaled rotation = translation + rotation + scaling")
+            text_zone.config(state="disabled")  # Bloque l'édition          
+
+        def lancer():
+            result_queue={}
+            global process
+            global corners
+            queue = Queue()
+            result_queue = Queue()
+            process = Process(target=v_simple, args=(queue,result_queue,fichiers_selectionnes,corners))
+            process.start()
+
+            # Update progress bar dynamically
+            def update_progress():
+                if not queue.empty():
+                    progress_value = queue.get()
+                    print(progress_value)
+                    progress_bar.set(progress_value/100)  # Correct usage in CustomTkinter
+                    if progress_value==100:
+                        simple_result=result_queue.get()
+                        plot_results_simple(simple_result)
+
+
+                if process.is_alive():
+                    app.after(100, update_progress)  # Continue updating      
+            update_progress() 
+
+        # Vérifie que tous les points restent dans le canvas
+        def clamp_points(points):
+            clamped = []
+            for x, y in points:
+                x = max(0, min(canvas_size, x))
+                y = max(0, min(canvas_size, y))
+                clamped.append([x, y])
+            return clamped
+
+        # Met à jour le polygone à partir de corners
+        def update_square():
+            global corners
+            clamped = clamp_points(corners)
+            corners[:] = clamped
+            coords = [coord for pt in clamped for coord in pt]
+            canvas.coords(square, *coords)
+            update_corner_entries()
+
+        # Rotation autour du centre
+        def rotate_square(angle_deg):
+            global corners
+            angle_rad = np.radians(float(angle_deg))
+            center = np.mean(corners, axis=0)
+            rot = np.array([
+                [np.cos(angle_rad), -np.sin(angle_rad)],
+                [np.sin(angle_rad),  np.cos(angle_rad)]
+            ])
+            corners = [((np.array(p) - center) @ rot.T + center).tolist() for p in corners]
+            update_square()
+
+        # Scaling autour du centre
+        def scale_square(scale_factor):
+            global corners
+            scale_factor = float(scale_factor)
+            center = np.mean(corners, axis=0)
+            corners = [((np.array(p) - center) * scale_factor + center).tolist() for p in corners]
+            update_square()
+
+        # Translation
+        def move_square(dx, dy):
+            global corners
+            corners = [[x + dx, y + dy] for x, y in corners]
+            update_square()
+
+        # Champs pour modifier les coins manuellement
+        corner_entries = []
+
+        def update_corner_entries():
+            for i, entry_pair in enumerate(corner_entries):
+                x, y = corners[i]
+                entry_pair[0].delete(0, tk.END)
+                entry_pair[0].insert(0, str(round(x, 1)))
+                entry_pair[1].delete(0, tk.END)
+                entry_pair[1].insert(0, str(round(y, 1)))
+
+        def on_corner_change():
+            global corners
+            try:
+                corners = [
+                    [float(entry_x.get()), float(entry_y.get())]
+                    for entry_x, entry_y in corner_entries
+                ]
+                update_square()
+            except ValueError:
+                pass  # Ignore si l'entrée est invalide
+
+        ctk.CTkLabel(frame_droite, text="Coins (x, y)").pack(pady=(10, 0))
+        for i in range(4):
+            frame = ctk.CTkFrame(frame_droite)
+            frame.pack()
+            label = ctk.CTkLabel(frame, text=f"Coin {i + 1}")
+            label.pack(side="left", padx=2)
+            entry_x = ctk.CTkEntry(frame, width=60)
+            entry_x.pack(side="left")
+            entry_y = ctk.CTkEntry(frame, width=60)
+            entry_y.pack(side="left")
+            entry_x.bind("<Return>", lambda e: on_corner_change())
+            entry_y.bind("<Return>", lambda e: on_corner_change())
+            corner_entries.append((entry_x, entry_y))
+
+        update_corner_entries()
+
+        # Sliders
+        ctk.CTkLabel(frame_droite, text="Rotation (°)").pack()
+        rotation_slider = ctk.CTkSlider(frame_droite, from_=0, to=360, command=rotate_square)
+        rotation_slider.pack()
+
+        ctk.CTkLabel(frame_droite, text="Scale").pack()
+        scale_slider = ctk.CTkSlider(frame_droite, from_=0.5, to=2.0, command=scale_square)
+        scale_slider.set(1.0)
+        scale_slider.pack()
+
+        # Boutons de translation
+        btn_frame = ctk.CTkFrame(frame_droite)
+        btn_frame.pack(pady=10)
+
+        ctk.CTkButton(btn_frame, text="⬅️", command=lambda: move_square(-10, 0)).grid(row=0, column=0)
+        ctk.CTkButton(btn_frame, text="➡️", command=lambda: move_square(10, 0)).grid(row=0, column=2)
+        ctk.CTkButton(btn_frame, text="⬆️", command=lambda: move_square(0, -10)).grid(row=0, column=1)
+        ctk.CTkButton(btn_frame, text="⬇️", command=lambda: move_square(0, 10)).grid(row=1, column=1)
+        bouton=ctk.CTkButton(
+            frame_droite,
+            text="Lancer ",
+            width=200,
+            height=50,
+            fg_color="dodgerblue",
+            hover_color="deepskyblue",
+            text_color="white",
+            corner_radius=10,
+            border_width=3,
+            border_color="white",
+            font=("Arial", 16, "bold"),
+            command=lancer,
+            )  
+        bouton.pack(pady=10)
+        progress_bar = ctk.CTkProgressBar(app)
+        progress_bar.grid(row=1, column=0, columnspan=2, sticky="ew", padx=10, pady=10) 
+
+        # Set the initial progress to 0
+        progress_bar.set(0)
 for name, func in functions_dict.items():
     menu_outils.add_command(label=name, command=func)
 
@@ -398,8 +568,7 @@ label_gauche.pack(pady=10)
 text_zone = tk.Text(frame_gauche, height=20, wrap="word", font=("Arial", 12))
 text_zone.pack(pady=5, padx=5, fill="both", expand=True)
 text_zone.config(state="disabled")  # Désactive l'édition
-
-
+ 
 if __name__ == "__main__":
     # Run the app
     app.mainloop()

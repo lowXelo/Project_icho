@@ -3,9 +3,9 @@ import numpy as np
 from astropy.io import fits
 import time
 import scipy
+from astropy.io import fits
 
-
-from skimage.registration import optical_flow_ilk, optical_flow_tvl1
+from skimage.registration import optical_flow_ilk
 from skimage.transform import warp
 from multiprocessing import Queue
 from skimage.registration import optical_flow_ilk
@@ -38,7 +38,7 @@ def find_outliers_2D(data, pclow=None, pchigh=None, thresh=None):
 #=======================================#
 #              read files               #
 #=======================================#
-def v1_pipelin_youness(les_options, queue, result_queue,file_unregistered, nump_warp_value=2, radius_value=2):
+def v1_pipelin_youness(les_options, queue, result_queue,file_unregistered, nump_warp_value, radius_value):
     Nobs = 4800
     mycref = 33
     Nthumb = 80
@@ -66,9 +66,6 @@ def v1_pipelin_youness(les_options, queue, result_queue,file_unregistered, nump_
         cc2_array = []
         RADIUS = range(1, radius_value)
         NUMP_WARP = range(1, nump_warp_value)
-        prev_cc2 = 0
-        best_i = 0
-        best_j = 0
         time_exe = []
         total_iterations = len(RADIUS) * len(NUMP_WARP)
         
@@ -94,10 +91,6 @@ def v1_pipelin_youness(les_options, queue, result_queue,file_unregistered, nump_
                     if index != mycref:
                         cc1_new.append(cc1)
                         cc2_new.append(cc2)
-                    if cc2 > prev_cc2:
-                        prev_cc2 = cc2
-                        best_i = i
-                        best_j = j
                     index += 1
                 cc1_array.append(cc1_new)
                 cc2_array.append(cc2_new)
@@ -116,7 +109,7 @@ def v1_pipelin_youness(les_options, queue, result_queue,file_unregistered, nump_
         list_des_moyenne = []
         list_des_ecarts_max = []
 
-        for i in range(len(cc1_array)):
+        for i in range(len(cc1_array)): #à optimiser 
             if les_options[1] == 1:
                 list_des_moyenne.append(np.mean(cc2_array[i]))
             if les_options[2] == 1:
@@ -125,10 +118,12 @@ def v1_pipelin_youness(les_options, queue, result_queue,file_unregistered, nump_
                 else:
                     list_des_ecarts_max.append(pow(min(cc2_array[i]) - np.mean(cc2_array[i]), 2))
 
+        
         # Store additional matrices
         if les_options[1] == 1:
             matrix_moy = np.array(list_des_moyenne).reshape(len(RADIUS), len(NUMP_WARP))
             returned_data[file_key]["matrix_moy"] = matrix_moy  
+            best_index= np.unravel_index(np.argmax(matrix_moy), matrix_moy.shape)
 
         if les_options[2] == 1:
             matrix_err = np.array(list_des_ecarts_max).reshape(len(RADIUS), len(NUMP_WARP))
@@ -137,7 +132,7 @@ def v1_pipelin_youness(les_options, queue, result_queue,file_unregistered, nump_
         if les_options[3] == 1:
             matrix_time = np.array(time_exe).reshape(len(RADIUS), len(NUMP_WARP))
             returned_data[file_key]["matrix_time"] = matrix_time
-        returned_data[file_key]["Best combination"]=[best_i, best_j] 
+        returned_data[file_key]["Best combination"]=best_index 
     result_queue.put(returned_data)
     queue.put(100)  
     
