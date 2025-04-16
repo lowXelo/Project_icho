@@ -369,14 +369,14 @@ def update_interface(mode):
 
     elif mode == "Deformation simple":
         label_deform = ctk.CTkLabel(frame_droite, text="Déformations simples", font=("Arial", 14, "bold"))
-        label_deform.pack(pady=10)
+        label_deform.pack(pady=5)
 
-        canvas_size = 300
+        canvas_size = 200
         canvas = tk.Canvas(frame_droite, width=canvas_size, height=canvas_size, bg="white")
-        canvas.pack(pady=10)
+        canvas.pack(pady=5)
 
         global corners
-        corners = [[100, 100], [200, 100], [200, 200], [100, 200]]
+        corners = [[50, 50], [150, 50], [150, 150], [50, 150]]
 
         square = canvas.create_polygon(*[coord for point in corners for coord in point], fill="skyblue")
 
@@ -405,17 +405,25 @@ def update_interface(mode):
 
             # Update progress bar dynamically
             def update_progress():
-                if not queue.empty():
-                    progress_value = queue.get()
-                    print(progress_value)
-                    progress_bar.set(progress_value/100)  # Correct usage in CustomTkinter
-                    if progress_value==100:
-                        simple_result=result_queue.get()
-                        plot_results_simple(simple_result)
+                try:
+                    while not queue.empty():
+                        progress_value = queue.get_nowait()
+                        progress_bar.set(progress_value / 100)
+                        print(progress_value)
 
+                        if progress_value == 100:
+                            if not result_queue.empty():
+                                simple_result = result_queue.get_nowait()
+                                print("bon")
+                                plot_results_simple(simple_result)
+                                return  # Stop checking after final result is processed
 
-                if process.is_alive():
-                    app.after(100, update_progress)  # Continue updating      
+                except Exception as e:
+                    print(f"Error in update_progress: {e}")
+
+                # Keep calling even after process is done, until we hit 100
+                app.after(10, update_progress)
+                                
             update_progress() 
 
         # Vérifie que tous les points restent dans le canvas
@@ -512,7 +520,7 @@ def update_interface(mode):
 
         # Boutons de translation
         btn_frame = ctk.CTkFrame(frame_droite)
-        btn_frame.pack(pady=10)
+        btn_frame.pack(pady=5)
 
         ctk.CTkButton(btn_frame, text="⬅️", command=lambda: move_square(-10, 0)).grid(row=0, column=0)
         ctk.CTkButton(btn_frame, text="➡️", command=lambda: move_square(10, 0)).grid(row=0, column=2)
@@ -521,8 +529,8 @@ def update_interface(mode):
         bouton=ctk.CTkButton(
             frame_droite,
             text="Lancer ",
-            width=200,
-            height=50,
+            width=150,
+            height=30,
             fg_color="dodgerblue",
             hover_color="deepskyblue",
             text_color="white",
@@ -538,6 +546,8 @@ def update_interface(mode):
 
         # Set the initial progress to 0
         progress_bar.set(0)
+        
+
 for name, func in functions_dict.items():
     menu_outils.add_command(label=name, command=func)
 
@@ -568,7 +578,7 @@ label_gauche.pack(pady=10)
 text_zone = tk.Text(frame_gauche, height=20, wrap="word", font=("Arial", 12))
 text_zone.pack(pady=5, padx=5, fill="both", expand=True)
 text_zone.config(state="disabled")  # Désactive l'édition
- 
+
 if __name__ == "__main__":
     # Run the app
     app.mainloop()
