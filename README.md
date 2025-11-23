@@ -106,10 +106,10 @@ Cette application est conçue pour le traitement et l'analyse d'images astronomi
 
 ## Utilisation
 
-1. Lancez l'application
+1. Lancez l'application dans le dossier "dist" (~1min pour le lancement)
 2. Sélectionnez la méthode de traitement souhaitée
 3. Configurez les paramètres
-4. Chargez les images à traiter
+4. Chargez les images à traiter .fit "RESSOURCES"
 5. Lancez le traitement
 6. Visualisez et analysez les résultats
 7. Sauvegardez les résultats si nécessaire
